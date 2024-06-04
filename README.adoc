@@ -1,0 +1,76 @@
+# TCP-Kafkaの簡易連携サンプル
+
+名前のとおり、TCPとKafka連携の簡易サンプルです。reactor-netty と reactor-kafka を使ってます。
+
+## 動作確認環境
+
+* MacOS Sonoma
+* JDK 17
+
+### kafka セットアップ
+
+* ダウンロード
+https://www.apache.org/dyn/closer.cgi?path=/kafka/3.7.0/kafka_2.13-3.7.0.tgz
+
+* 展開 (環境変数のパスはご自身の環境で合うものに適宜変えてください。)
+
+```sh
+$ cd ~/Downloads
+$ tar -zxf kafka_2.13-3.7.0.tgz
+$ export KAFKA_DIR=/Users/mbp1/apps/kafka_2.13-3.7.0
+$ export PATH=$PATH:$KAFKA_DIR/bin
+```
+
+* Zookeeper起動
+
+```sh
+$  $KAFKA_DIR/bin/zookeeper-server-start.sh $KAFKA_DIR/config/zookeeper.properties > /tmp/zookeeper.log &
+```
+
+* Kafkaインスタンス起動
+
+```sh
+$ $KAFKA_DIR/bin/kafka-server-start.sh $KAFKA_DIR/config/server.properties > /tmp/kafka.log &
+```
+
+* 上り topic 作成
+
+```sh
+$ $KAFKA_DIR/bin/kafka-topics.sh --create --topic upstream-topic --bootstrap-server  localhost:9092
+```
+
+* 下り topic 作成
+
+```sh
+$ $KAFKA_DIR/bin/kafka-topics.sh --create --topic downstream-topic --bootstrap-server  localhost:9092
+```
+
+* topic 作成確認 2つ生成されていること。
+
+```sh
+$ $KAFKA_DIR/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe
+Topic: upstream-topic	TopicId: KH2MAOOQTVSVFL1FVh_i7g	PartitionCount: 1	ReplicationFactor: 1	Configs: 
+	Topic: upstream-topic	Partition: 0	Leader: 0	Replicas: 0	Isr: 0
+Topic: downstream-topic	TopicId: e-3h2Y7gTA-lIlPYULBgTw	PartitionCount: 1	ReplicationFactor: 1	Configs:
+	Topic: downstream-topic	Partition: 0	Leader: 0	Replicas: 0	Isr: 0
+```
+
+### 動作確認
+
+* IDEか何かで `org.example.TcpBus` を起動し、その後 `org.example.Client` を起動します。
+* `Client` のコマンドコンソールから、何らかの文字を入力してEnterを押すと、TCPを介してKafkaのTopicを2つ経由して応答が帰ってきます。
+* `bye` と入力することで `Client` は抜けられます。 `TcpBus` の止め方は特に無いので、IDEや `kill` コマンドなどから止めちゃってください。
+
+### Kafkaの後片付け
+
+* Kafkaサーバー停止
+
+```sh
+$ $KAFKA_DIR/bin/kafka-server-stop.sh
+```
+
+* zookeeperサーバー停止
+
+```sh
+$ $KAFKA_DIR/bin/zookeeper-server-stop.sh
+```
